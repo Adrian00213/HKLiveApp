@@ -10,21 +10,48 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FF6B35"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hklive.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "HKLive需要使用你的位置來顯示附近的活動、優惠和事件",
+        "NSCameraUsageDescription": "HKLive需要使用相機來拍攝照片和影片",
+        "NSPhotoLibraryUsageDescription": "HKLive需要訪問你的相冊來上傳照片",
+        "NSMicrophoneUsageDescription": "HKLive需要使用麥克風來錄製語音"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FF6B35"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "package": "com.hklive.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "HKLive需要使用你的位置來顯示附近的活動、優惠和事件"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      }
     }
   }
 }

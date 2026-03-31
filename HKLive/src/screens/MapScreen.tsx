@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,12 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
+  Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import MapView, { Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
+import * as Location from 'expo-location';
 import { useAppStore } from '../store/appStore';
 import { useTranslation } from '../i18n/useTranslation';
 import { mockIncidents } from '../services/mockData';
@@ -37,26 +41,72 @@ const IncidentIcon = ({ type, size = 22 }: { type: IncidentType; size?: number }
 
 const MapScreen: React.FC = () => {
   const { t } = useTranslation();
-  const { incidents, setIncidents, currentLocation } = useAppStore();
+  const { incidents, setIncidents } = useAppStore();
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [filter, setFilter] = useState<IncidentType | 'all'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportType, setReportType] = useState<IncidentType>('accident');
   const [reportDescription, setReportDescription] = useState('');
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapRegion, setMapRegion] = useState<Region>({
+    latitude: 22.3193,
+    longitude: 114.1694,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05,
+  });
+  const mapRef = useRef<MapView>(null);
 
   useEffect(() => {
-    setTimeout(() => {
-      // Sort by distance
-      const sorted = [...mockIncidents].sort((a, b) => 
-        (a.distance || 999) - (b.distance || 999)
-      );
-      setIncidents(sorted);
-      setIsLoading(false);
-    }, 800);
+    initializeLocation();
   }, []);
 
-  // Sort by distance
+  const initializeLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('權限不足', '需要位置權限才能使用地圖功能');
+        setIsLoading(false);
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+      
+      setUserLocation({ lat: latitude, lng: longitude });
+      setMapRegion({
+        latitude,
+        longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      });
+
+      // Sort incidents by distance from user
+      const sorted = [...mockIncidents].sort((a, b) => {
+        const distA = getDistance(latitude, longitude, a.lat, a.lng);
+        const distB = getDistance(latitude, longitude, b.lat, b.lng);
+        return distA - distB;
+      });
+      setIncidents(sorted);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Location error:', error);
+      setIsLoading(false);
+    }
+  };
+
+  // Haversine distance calculation
+  const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
   const sortedIncidents = [...incidents].sort((a, b) => 
     (a.distance || 999) - (b.distance || 999)
   );
@@ -83,9 +133,9 @@ const MapScreen: React.FC = () => {
   };
 
   const formatDistance = (km?: number) => {
-    if (!km) return '好近';
-    if (km < 0.1) return '<100m';
-    return `${(km * 1000).toFixed(0)}m`;
+    if (!km || km < 0.1) return '<100m';
+    if (km < 1) return `${(km * 1000).toFixed(0)}m`;
+    return `${km.toFixed(1)}km`;
   };
 
   const formatTimeAgo = (date: Date) => {
@@ -98,12 +148,16 @@ const MapScreen: React.FC = () => {
     return '尋日';
   };
 
+  const onRegionChangeComplete = (region: Region) => {
+    setMapRegion(region);
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FF6B35" />
-          <Text style={styles.loadingText}>{t('loading')}</Text>
+          <Text style={styles.loadingText}>緊認位置...</Text>
         </View>
       </SafeAreaView>
     );
@@ -115,9 +169,23 @@ const MapScreen: React.FC = () => {
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>HKLive</Text>
-          <Text style={styles.headerSubtitle}>🗺️ 香港 · {filteredIncidents.length}個附近事件</Text>
+          <Text style={styles.headerSubtitle}>
+            🗺️ {filteredIncidents.length}個附近事件 · 由近到遠
+          </Text>
         </View>
-        <TouchableOpacity style={styles.locationBtn}>
+        <TouchableOpacity 
+          style={styles.locationBtn}
+          onPress={() => {
+            if (userLocation && mapRef.current) {
+              mapRef.current.animateToRegion({
+                latitude: userLocation.lat,
+                longitude: userLocation.lng,
+                latitudeDelta: 0.02,
+                longitudeDelta: 0.02,
+              }, 500);
+            }
+          }}
+        >
           <Text style={styles.locationBtnIcon}>📍</Text>
         </TouchableOpacity>
       </View>
@@ -142,70 +210,62 @@ const MapScreen: React.FC = () => {
         </ScrollView>
       </View>
 
-      {/* Sort indicator */}
-      <View style={styles.sortBar}>
-        <Text style={styles.sortBarText}>📍 由近到遠 · 最近的士</Text>
-      </View>
+      {/* Real Map */}
+      <View style={styles.mapContainer}>
+        <MapView
+          ref={mapRef}
+          style={styles.map}
+          provider={PROVIDER_DEFAULT}
+          initialRegion={mapRegion}
+          onRegionChangeComplete={onRegionChangeComplete}
+          showsUserLocation={true}
+          showsMyLocationButton={false}
+          showsCompass={true}
+          mapType={Platform.OS === 'ios' ? 'mutedStandard' : 'standard'}
+        >
+          {/* User location marker */}
+          {userLocation && (
+            <Marker
+              coordinate={{ latitude: userLocation.lat, longitude: userLocation.lng }}
+              title="你既位置"
+              pinColor="#FF6B35"
+            />
+          )}
 
-      {/* Map Area */}
-      <View style={styles.mapArea}>
-        <View style={styles.mapPlaceholder}>
-          {/* Grid effect */}
-          <View style={styles.gridOverlay}>
-            {[...Array(8)].map((_, i) => (
-              <View key={`h${i}`} style={[styles.gridLine, styles.gridLineH, { top: `${10 + i * 12}%` }]} />
-            ))}
-            {[...Array(10)].map((_, i) => (
-              <View key={`v${i}`} style={[styles.gridLine, styles.gridLineV, { left: `${5 + i * 10}%` }]} />
-            ))}
-          </View>
-
-          {/* Map center marker */}
-          <View style={styles.mapCenter}>
-            <View style={styles.mapCenterDot} />
-            <View style={styles.mapCenterRing} />
-          </View>
-
-          {/* Incident markers - positioned by distance */}
-          {filteredIncidents.slice(0, 6).map((incident, index) => {
-            const angle = (index * 60 + 30) * (Math.PI / 180);
-            const radius = 35 + (incident.distance || 0) * 10;
-            const x = 50 + radius * Math.cos(angle);
-            const y = 50 + radius * Math.sin(angle) * 0.7;
-            return (
-              <TouchableOpacity
-                key={incident.id}
-                style={[
-                  styles.marker,
-                  { top: `${y}%`, left: `${x}%` },
-                  { borderColor: incidentColors[incident.type] },
-                  selectedIncident?.id === incident.id && styles.markerSelected,
-                ]}
-                onPress={() => setSelectedIncident(incident)}
-              >
-                <IncidentIcon type={incident.type} size={20} />
-                <View style={[styles.markerBadge, { backgroundColor: incidentColors[incident.type] }]}>
-                  <Text style={styles.markerBadgeText}>{formatDistance(incident.distance)}</Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-
-          {/* Legend */}
-          <View style={styles.legend}>
-            <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#F44336' }]} /><Text style={styles.legendText}>意外</Text></View>
-            <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#FF9800' }]} /><Text style={styles.legendText}>活動</Text></View>
-            <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#FF5722' }]} /><Text style={styles.legendText}>塞車</Text></View>
-            <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#2196F3' }]} /><Text style={styles.legendText}>天氣</Text></View>
-          </View>
-        </View>
+          {/* Incident markers */}
+          {filteredIncidents.map((incident) => (
+            <Marker
+              key={incident.id}
+              coordinate={{ latitude: incident.lat, longitude: incident.lng }}
+              title={incident.title}
+              description={incident.description}
+              onPress={() => setSelectedIncident(incident)}
+            >
+              <View style={[styles.markerContainer, { borderColor: incidentColors[incident.type] }]}>
+                <IncidentIcon type={incident.type} size={18} />
+              </View>
+            </Marker>
+          ))}
+        </MapView>
 
         {/* Map controls */}
         <View style={styles.mapControls}>
-          <TouchableOpacity style={styles.mapControlBtn}>
+          <TouchableOpacity 
+            style={styles.mapControlBtn}
+            onPress={() => {
+              const newDelta = Math.max(0.01, mapRegion.latitudeDelta * 0.5);
+              setMapRegion({ ...mapRegion, latitudeDelta: newDelta, longitudeDelta: newDelta });
+            }}
+          >
             <Text style={styles.mapControlIcon}>➕</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.mapControlBtn}>
+          <TouchableOpacity 
+            style={styles.mapControlBtn}
+            onPress={() => {
+              const newDelta = Math.min(1, mapRegion.latitudeDelta * 2);
+              setMapRegion({ ...mapRegion, latitudeDelta: newDelta, longitudeDelta: newDelta });
+            }}
+          >
             <Text style={styles.mapControlIcon}>➖</Text>
           </TouchableOpacity>
         </View>
@@ -227,8 +287,12 @@ const MapScreen: React.FC = () => {
             <View style={styles.detailInfo}>
               <Text style={styles.detailTitle}>{selectedIncident.title}</Text>
               <View style={styles.detailMeta}>
-                <Text style={styles.detailMetaText}>📍 {formatDistance(selectedIncident.distance)}</Text>
-                <Text style={styles.detailMetaText}>🕐 {formatTimeAgo(selectedIncident.createdAt)}</Text>
+                <Text style={styles.detailMetaText}>
+                  📍 {formatDistance(selectedIncident.distance)}
+                </Text>
+                <Text style={styles.detailMetaText}>
+                  🕐 {formatTimeAgo(selectedIncident.createdAt)}
+                </Text>
               </View>
             </View>
             <TouchableOpacity style={styles.detailClose} onPress={() => setSelectedIncident(null)}>
@@ -259,9 +323,9 @@ const MapScreen: React.FC = () => {
         <Text style={styles.reportFabText}>{t('reportIncident')}</Text>
       </TouchableOpacity>
 
-      {/* Bottom list - sorted by distance */}
+      {/* Bottom list */}
       <View style={styles.bottomList}>
-        <Text style={styles.bottomListTitle}>📍 附近事件 (近→遠)</Text>
+        <Text style={styles.bottomListTitle}>📍 事件列表 (近→遠)</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bottomListContent}>
           {filteredIncidents.slice(0, 5).map((incident) => (
             <TouchableOpacity
@@ -270,7 +334,15 @@ const MapScreen: React.FC = () => {
                 styles.bottomCard,
                 selectedIncident?.id === incident.id && styles.bottomCardSelected,
               ]}
-              onPress={() => setSelectedIncident(incident)}
+              onPress={() => {
+                setSelectedIncident(incident);
+                mapRef.current?.animateToRegion({
+                  latitude: incident.lat,
+                  longitude: incident.lng,
+                  latitudeDelta: 0.02,
+                  longitudeDelta: 0.02,
+                }, 500);
+              }}
             >
               <View style={[styles.bottomCardIcon, { backgroundColor: incidentColors[incident.type] + '20' }]}>
                 <IncidentIcon type={incident.type} size={18} />
@@ -335,7 +407,14 @@ const MapScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.reportSubmit}>
+            <TouchableOpacity 
+              style={styles.reportSubmit}
+              onPress={() => {
+                Alert.alert('已提交', '多謝你既報料！我地會盡快處理');
+                setShowReportModal(false);
+                setReportDescription('');
+              }}
+            >
               <Text style={styles.reportSubmitText}>提交 📤</Text>
             </TouchableOpacity>
           </View>
@@ -361,25 +440,9 @@ const styles = StyleSheet.create({
   filterIcon: { fontSize: 13, marginRight: 5 },
   filterText: { fontSize: 13, color: '#666' },
   filterTextActive: { color: '#FFF', fontWeight: '600' },
-  sortBar: { backgroundColor: '#FFF5F0', paddingHorizontal: 20, paddingVertical: 8 },
-  sortBarText: { fontSize: 12, color: '#FF6B35' },
-  mapArea: { flex: 1, margin: 16, position: 'relative' },
-  mapPlaceholder: { flex: 1, backgroundColor: '#E8F4F8', borderRadius: 20, overflow: 'hidden', justifyContent: 'center', alignItems: 'center' },
-  gridOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  gridLine: { position: 'absolute', backgroundColor: '#D0E8F0' },
-  gridLineH: { left: 0, right: 0, height: 1 },
-  gridLineV: { top: 0, bottom: 0, width: 1 },
-  mapCenter: { position: 'absolute', top: '50%', left: '50%', marginTop: -15, marginLeft: -15 },
-  mapCenterDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#FF6B35' },
-  mapCenterRing: { position: 'absolute', top: -8, left: -8, width: 28, height: 28, borderRadius: 14, borderWidth: 2, borderColor: '#FF6B35', opacity: 0.4 },
-  marker: { position: 'absolute', width: 50, height: 50, borderRadius: 25, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', borderWidth: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 5, elevation: 5, marginLeft: -25, marginTop: -25 },
-  markerSelected: { backgroundColor: '#FFF5F0', transform: [{ scale: 1.2 }], shadowColor: '#FF6B35', shadowOpacity: 0.5 },
-  markerBadge: { position: 'absolute', bottom: -6, paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6 },
-  markerBadgeText: { fontSize: 8, color: '#FFF', fontWeight: 'bold' },
-  legend: { position: 'absolute', bottom: 16, left: 16, backgroundColor: 'rgba(255,255,255,0.95)', padding: 10, borderRadius: 10 },
-  legendItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  legendDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
-  legendText: { fontSize: 11, color: '#666' },
+  mapContainer: { flex: 1, position: 'relative' },
+  map: { flex: 1 },
+  markerContainer: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', borderWidth: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 5, elevation: 5 },
   mapControls: { position: 'absolute', right: 16, top: 16, gap: 8 },
   mapControlBtn: { width: 44, height: 44, backgroundColor: '#FFF', borderRadius: 12, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
   mapControlIcon: { fontSize: 20, color: '#666' },
