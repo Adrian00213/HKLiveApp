@@ -3,9 +3,9 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 
-import MapScreen from './src/screens/MapScreenSimple';
+import MapScreen from './src/screens/MapScreen';
 import InfoScreen from './src/screens/InfoScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import { useAppStore } from './src/store/appStore';
@@ -15,159 +15,33 @@ import { RootTabParamList } from './src/types';
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
 const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
-  const [fadeAnim] = useState(new Animated.Value(0));
-  const [scaleAnim] = useState(new Animated.Value(0.5));
-  const [slideAnim] = useState(new Animated.Value(50));
-
   React.useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
     const timer = setTimeout(onFinish, 2500);
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <View style={splashStyles.container}>
-      <Animated.View 
-        style={[
-          splashStyles.logoContainer,
-          {
-            opacity: fadeAnim,
-            transform: [
-              { scale: scaleAnim },
-              { translateY: slideAnim }
-            ],
-          }
-        ]}
-      >
-        <Text style={splashStyles.emoji}>🦞</Text>
-        <Text style={splashStyles.title}>HKLive</Text>
-        <Text style={splashStyles.subtitle}>「香港，一触即发」</Text>
-      </Animated.View>
-      
-      <Animated.View style={[splashStyles.loadingContainer, { opacity: fadeAnim }]}>
-        <View style={splashStyles.dots}>
-          <AnimatedDot delay={0} />
-          <AnimatedDot delay={200} />
-          <AnimatedDot delay={400} />
-        </View>
-        <Text style={splashStyles.loadingText}>Loading...</Text>
-      </Animated.View>
+    <View style={styles.splash}>
+      <Text style={styles.splashEmoji}>🦞</Text>
+      <Text style={styles.splashTitle}>HKLive</Text>
+      <Text style={styles.splashSubtitle}>「香港，一触即发」</Text>
+      <ActivityIndicator size="large" color="#FFF" style={styles.spinner} />
     </View>
   );
 };
 
-const AnimatedDot = ({ delay }: { delay: number }) => {
-  const [opacity] = useState(new Animated.Value(0.3));
-
-  React.useEffect(() => {
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 600,
-          delay,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 0.3,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    animation.start();
-    return () => animation.stop();
-  }, []);
-
-  return <Animated.View style={[splashStyles.dot, { opacity }]} />;
-};
-
-const splashStyles = {
-  container: {
+const styles = StyleSheet.create({
+  splash: {
     flex: 1,
     backgroundColor: '#FF6B35',
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  logoContainer: {
-    alignItems: 'center' as const,
-  },
-  emoji: {
-    fontSize: 80,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 48,
-    fontWeight: 'bold' as const,
-    color: '#FFF',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  loadingContainer: {
-    position: 'absolute' as const,
-    bottom: 100,
-    alignItems: 'center' as const,
-  },
-  dots: {
-    flexDirection: 'row' as const,
-    marginBottom: 12,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#FFF',
-    marginHorizontal: 5,
-  },
-  loadingText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
-  },
-};
-
-const TabIcon = ({ icon, focused }: { icon: string; focused: boolean }) => (
-  <View style={[tabStyles.iconContainer, focused && tabStyles.iconContainerFocused]}>
-    <Text style={tabStyles.icon}>{icon}</Text>
-  </View>
-);
-
-const tabStyles = {
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-    backgroundColor: 'transparent',
-  },
-  iconContainerFocused: {
-    backgroundColor: '#FFF5F0',
-  },
-  icon: {
-    fontSize: 24,
-  },
-};
+  splashEmoji: { fontSize: 80, marginBottom: 16 },
+  splashTitle: { fontSize: 48, fontWeight: 'bold', color: '#FFF', marginBottom: 8 },
+  splashSubtitle: { fontSize: 16, color: 'rgba(255,255,255,0.8)', marginBottom: 40 },
+  spinner: { marginTop: 20 },
+});
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -192,20 +66,10 @@ export default function App() {
               backgroundColor: '#FFFFFF',
               borderTopWidth: 1,
               borderTopColor: '#F0F0F0',
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              elevation: 0,
-              shadowOpacity: 0,
             },
             tabBarActiveTintColor: '#FF6B35',
             tabBarInactiveTintColor: '#999',
-            tabBarLabelStyle: {
-              fontSize: 12,
-              fontWeight: '500',
-              marginTop: 4,
-            },
+            tabBarLabelStyle: { fontSize: 12, fontWeight: '500', marginTop: 4 },
           }}
         >
           <Tab.Screen
@@ -213,7 +77,11 @@ export default function App() {
             component={MapScreen}
             options={{
               tabBarLabel: t('map'),
-              tabBarIcon: ({ focused }) => <TabIcon icon="🗺️" focused={focused} />,
+              tabBarIcon: ({ focused }) => (
+                <View style={focused ? styles.tabIconActive : undefined}>
+                  <Text style={styles.tabIcon}>🗺️</Text>
+                </View>
+              ),
             }}
           />
           <Tab.Screen
@@ -221,7 +89,11 @@ export default function App() {
             component={InfoScreen}
             options={{
               tabBarLabel: t('info'),
-              tabBarIcon: ({ focused }) => <TabIcon icon="📱" focused={focused} />,
+              tabBarIcon: ({ focused }) => (
+                <View style={focused ? styles.tabIconActive : undefined}>
+                  <Text style={styles.tabIcon}>📱</Text>
+                </View>
+              ),
             }}
           />
           <Tab.Screen
@@ -229,7 +101,11 @@ export default function App() {
             component={ProfileScreen}
             options={{
               tabBarLabel: t('profile'),
-              tabBarIcon: ({ focused }) => <TabIcon icon="👤" focused={focused} />,
+              tabBarIcon: ({ focused }) => (
+                <View style={focused ? styles.tabIconActive : undefined}>
+                  <Text style={styles.tabIcon}>👤</Text>
+                </View>
+              ),
             }}
           />
         </Tab.Navigator>
@@ -237,3 +113,8 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  tabIconActive: { backgroundColor: '#FFF5F0', borderRadius: 22 },
+  tabIcon: { fontSize: 24 },
+});
