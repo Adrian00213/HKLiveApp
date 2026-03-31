@@ -1,0 +1,380 @@
+import { Incident, Deal, Discussion, Weather, AQHI, MTRStatus, BusArrival } from '../types';
+
+// Distance-sorted mock data (distance in km from user's location)
+// User location: 22.3193, 114.1694 (Hong Kong)
+
+export interface GeoLocated {
+  lat: number;
+  lng: number;
+  distance?: number; // km
+}
+
+// Mock Incidents - sorted by distance (nearest first)
+export const mockIncidents: Incident[] = [
+  {
+    id: '1',
+    type: 'accident',
+    lat: 22.3200,
+    lng: 114.1700,
+    title: '旺角道有壞車',
+    description: '一架貨車死火，左線封閉，請改行彌敦道',
+    createdAt: new Date(),
+    userId: 'system',
+    upvotes: 42,
+    distance: 0.3,
+  },
+  {
+    id: '2',
+    type: 'traffic',
+    lat: 22.3250,
+    lng: 114.1680,
+    title: '窩打老道塞車',
+    description: '交通繁忙，行車緩慢，預計比平時多15分鐘',
+    createdAt: new Date(Date.now() - 1800000),
+    userId: 'system',
+    upvotes: 28,
+    distance: 0.6,
+  },
+  {
+    id: '3',
+    type: 'event',
+    lat: 22.3193,
+    lng: 114.1720,
+    title: '女人街市集',
+    description: '露天市集，各式貨品，熱鬧非常',
+    createdAt: new Date(Date.now() - 3600000),
+    userId: 'system',
+    upvotes: 89,
+    distance: 0.2,
+  },
+  {
+    id: '4',
+    type: 'accident',
+    lat: 22.3350,
+    lng: 114.1750,
+    title: '界限街擦撞',
+    description: '兩車相撞，冇人受傷，佔用一線',
+    createdAt: new Date(Date.now() - 2700000),
+    userId: 'system',
+    upvotes: 15,
+    distance: 1.8,
+  },
+  {
+    id: '5',
+    type: 'event',
+    lat: 22.3100,
+    lng: 114.1650,
+    title: '廟街夜市',
+    description: '譚仔新店開張，大排檔美食',
+    createdAt: new Date(Date.now() - 7200000),
+    userId: 'system',
+    upvotes: 156,
+    distance: 1.2,
+  },
+  {
+    id: '6',
+    type: 'weather',
+    lat: 22.3200,
+    lng: 114.1694,
+    title: '酷熱天氣警告',
+    description: '天文台提醒：記得飲多啲水，避免暴曬',
+    createdAt: new Date(Date.now() - 1800000),
+    userId: 'system',
+    upvotes: 201,
+    distance: 0.0,
+  },
+];
+
+// Mock Deals - sorted by distance (nearest first)
+export const mockDeals: Deal[] = [
+  {
+    id: '1',
+    merchantId: 'm1',
+    merchantName: '譚仔雲南米線',
+    title: '下午茶時段優惠',
+    description: '米線配料加量不加價，再送凍嘢飲',
+    discount: '7折',
+    lat: 22.3198,
+    lng: 114.1710,
+    expiry: new Date(Date.now() + 7200000),
+    category: 'food',
+    distance: 0.15,
+  },
+  {
+    id: '2',
+    merchantId: 'm2',
+    merchantName: '麥當勞',
+    title: '晚市套餐',
+    description: '超值套餐，附送巨無霸',
+    discount: '5折',
+    lat: 22.3210,
+    lng: 114.1680,
+    expiry: new Date(Date.now() + 14400000),
+    category: 'food',
+    distance: 0.25,
+  },
+  {
+    id: '3',
+    merchantId: 'm3',
+    merchantName: '惠康超級市場',
+    title: '抗疫用品大特價',
+    description: '口罩、消毒噴霧、洗手液優惠價',
+    discount: '7折',
+    lat: 22.3180,
+    lng: 114.1730,
+    expiry: new Date(Date.now() + 86400000),
+    category: 'shopping',
+    distance: 0.4,
+  },
+  {
+    id: '4',
+    merchantId: 'm4',
+    merchantName: 'MCL 荷里活戲院',
+    title: '學生票優惠',
+    description: '出示學生證享半價，同場加映免費爆米花',
+    discount: '5折',
+    lat: 22.3250,
+    lng: 114.1750,
+    expiry: new Date(Date.now() + 604800000),
+    category: 'entertainment',
+    distance: 0.8,
+  },
+  {
+    id: '5',
+    merchantId: 'm5',
+    merchantName: '板長壽司',
+    title: '限定御結',
+    description: '時令海膽軍艦，數量有限，售完即止',
+    discount: '8折',
+    lat: 22.3170,
+    lng: 114.1720,
+    expiry: new Date(Date.now() + 10800000),
+    category: 'food',
+    distance: 0.35,
+  },
+  {
+    id: '6',
+    merchantId: 'm6',
+    merchantName: '屈臣氏',
+    title: '護膚品周',
+    description: '指定護膚品買二送一',
+    discount: '买二送一',
+    lat: 22.3220,
+    lng: 114.1690,
+    expiry: new Date(Date.now() + 172800000),
+    category: 'shopping',
+    distance: 0.45,
+  },
+];
+
+// Mock Discussions - sorted by recency but show distance
+export const mockDiscussions: Discussion[] = [
+  {
+    id: '1',
+    district: '油尖旺',
+    title: '廟街夜市終於搞啦！',
+    content: '終於等到，你哋去咗未？今晚有嘢食又有表演睇',
+    authorId: 'u1',
+    authorName: '街坊小強',
+    isAnonymous: false,
+    createdAt: new Date(Date.now() - 600000), // 10 mins ago
+    commentCount: 45,
+    distance: 0.8,
+  },
+  {
+    id: '2',
+    district: '油尖旺',
+    title: '邊度有好吃嘅車仔麵？',
+    content: '搬呢頭兩個月，想搵好味嘅車仔麵，各位巴打有冇好介紹？',
+    authorId: 'u2',
+    authorName: '匿名',
+    isAnonymous: true,
+    createdAt: new Date(Date.now() - 1800000), // 30 mins ago
+    commentCount: 23,
+    distance: 0.5,
+  },
+  {
+    id: '3',
+    district: '深水埗',
+    title: '黃金電腦有新優惠',
+    content: '見到有間話砌機送風扇，有冇巴打知係真定假？驚中伏',
+    authorId: 'u3',
+    authorName: '電腦發燒友',
+    isAnonymous: false,
+    createdAt: new Date(Date.now() - 3600000), // 1 hour ago
+    commentCount: 31,
+    distance: 1.5,
+  },
+  {
+    id: '4',
+    district: '旺角',
+    title: 'MIRROR演唱會飛被炒貴晒',
+    content: '依家啲飛貴到離譜，原價$680炒到$3000，真係去唔起',
+    authorId: 'u4',
+    authorName: '追星粉絲',
+    isAnonymous: false,
+    createdAt: new Date(Date.now() - 7200000), // 2 hours ago
+    commentCount: 89,
+    distance: 0.3,
+  },
+  {
+    id: '5',
+    district: '油尖旺',
+    title: '最近邊間茶餐廳正啲？',
+    content: '金鳳樓得唔得？還是蘭芳園正一點？',
+    authorId: 'u5',
+    authorName: 'foodie_hk',
+    isAnonymous: false,
+    createdAt: new Date(Date.now() - 10800000), // 3 hours ago
+    commentCount: 17,
+    distance: 0.2,
+  },
+];
+
+// Mock Events - sorted by date/distance
+export interface Event {
+  id: string;
+  type: 'concert' | 'exhibition' | 'festival' | 'sports';
+  title: string;
+  venue: string;
+  date: string;
+  time: string;
+  price: string;
+  image?: string;
+  attendees: number;
+  distance: number; // km
+}
+
+export const mockEvents: Event[] = [
+  {
+    id: '1',
+    type: 'concert',
+    title: 'MIRROR 演唱會 2026',
+    venue: '亞洲國際博覽館',
+    date: '2026-04-15',
+    time: '20:00',
+    price: '$680-$1280',
+    attendees: 4521,
+    distance: 8.5,
+  },
+  {
+    id: '2',
+    type: 'festival',
+    title: '香港美酒佳餚節',
+    venue: '中環海濱',
+    date: '2026-04-20',
+    time: '12:00-22:00',
+    price: '免費入場',
+    attendees: 8760,
+    distance: 3.2,
+  },
+  {
+    id: '3',
+    type: 'exhibition',
+    title: '香港藝術節',
+    venue: '香港文化中心',
+    date: '2026-04-01',
+    time: '10:00-21:00',
+    price: '$100-$380',
+    attendees: 1280,
+    distance: 1.8,
+  },
+  {
+    id: '4',
+    type: 'sports',
+    title: '香港馬拉松 2026',
+    venue: '尖沙咀',
+    date: '2026-04-10',
+    time: '06:00',
+    price: '$450',
+    attendees: 15000,
+    distance: 2.5,
+  },
+  {
+    id: '5',
+    type: 'festival',
+    title: '廟街夜市',
+    venue: '廟街',
+    date: '每日',
+    time: '18:00-23:00',
+    price: '免費',
+    attendees: 2500,
+    distance: 0.8,
+  },
+  {
+    id: '6',
+    type: 'concert',
+    title: '姜濤見面會',
+    venue: '九龍灣展覽中心',
+    date: '2026-04-05',
+    time: '15:00',
+    price: '$380-$880',
+    attendees: 3200,
+    distance: 4.2,
+  },
+  {
+    id: '7',
+    type: 'exhibition',
+    title: 'NFT 數碼藝術展',
+    venue: '西九文化區',
+    date: '2026-04-01',
+    time: '10:00-20:00',
+    price: '$150',
+    attendees: 680,
+    distance: 3.8,
+  },
+];
+
+// Mock Weather
+export const mockWeather: Weather = {
+  temperature: 28,
+  feelsLike: 32,
+  humidity: 75,
+  uvIndex: 8,
+  description: '大致天晴',
+  icon: 'sun',
+};
+
+// Mock AQHI for 18 districts
+export const mockAqhi: AQHI[] = [
+  { district: '中西區', value: 3, level: 'low' },
+  { district: '東區', value: 4, level: 'low' },
+  { district: '南區', value: 2, level: 'low' },
+  { district: '灣仔', value: 5, level: 'medium' },
+  { district: '九龍城', value: 6, level: 'medium' },
+  { district: '觀塘', value: 7, level: 'medium' },
+  { district: '深水埗', value: 5, level: 'medium' },
+  { district: '黃大仙', value: 4, level: 'low' },
+  { district: '油尖旺', value: 6, level: 'medium' },
+  { district: '離島', value: 2, level: 'low' },
+  { district: '葵青', value: 5, level: 'medium' },
+  { district: '荃灣', value: 4, level: 'low' },
+  { district: '屯門', value: 3, level: 'low' },
+  { district: '元朗', value: 4, level: 'low' },
+  { district: '北區', value: 3, level: 'low' },
+  { district: '大埔', value: 4, level: 'low' },
+  { district: '沙田', value: 5, level: 'medium' },
+  { district: '西貢', value: 3, level: 'low' },
+];
+
+// Mock MTR Status - sorted by line importance
+export const mockMtrStatus: MTRStatus[] = [
+  { line: '觀塘線', status: 'normal' },
+  { line: '荃灣線', status: 'normal' },
+  { line: '港島線', status: 'normal' },
+  { line: '東鐵線', status: 'delayed', message: '服務稍有延誤' },
+  { line: '將軍澳線', status: 'normal' },
+  { line: '屯馬線', status: 'normal' },
+  { line: '迪士尼線', status: 'normal' },
+  { line: '機場快線', status: 'normal' },
+];
+
+// Mock Bus Arrivals - sorted by ETA (nearest first)
+export const mockBusArrivals: BusArrival[] = [
+  { stopId: '1', route: '1', destination: '堅尼地城', eta: 2, capacity: 'medium', distance: 0.1 },
+  { stopId: '1', route: '5', destination: '北角', eta: 5, capacity: 'high', distance: 0.1 },
+  { stopId: '1', route: '10', destination: '香港仔', eta: 8, capacity: 'low', distance: 0.1 },
+  { stopId: '2', route: '203', destination: '又一城', eta: 3, capacity: 'medium', distance: 0.3 },
+  { stopId: '2', route: '270A', destination: '上水', eta: 11, capacity: 'high', distance: 0.3 },
+  { stopId: '3', route: 'N21', destination: '機場', eta: 15, capacity: 'low', distance: 0.5 },
+];
