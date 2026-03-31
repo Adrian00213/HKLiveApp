@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   ScrollView,
   Switch,
   Alert,
+  TextInput,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppStore } from '../store/appStore';
@@ -15,6 +17,11 @@ import { useTranslation } from '../i18n/useTranslation';
 const ProfileScreen: React.FC = () => {
   const { t, selectedLanguage, getLanguageName } = useTranslation();
   const { user, setSelectedLanguage } = useAppStore();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
 
   const languages: Array<{ key: 'zh-TW' | 'zh-CN' | 'en'; flag: string }> = [
     { key: 'zh-TW', flag: '🇭🇰' },
@@ -42,6 +49,26 @@ const ProfileScreen: React.FC = () => {
     setSelectedLanguage(lang);
   };
 
+  const handleAuth = async () => {
+    if (!email || !password) {
+      Alert.alert('請輸入', '請填寫電郵和密碼');
+      return;
+    }
+    
+    if (!isLogin && !name) {
+      Alert.alert('請輸入', '請填寫名稱');
+      return;
+    }
+
+    // For demo - in production, connect to Firebase Auth
+    Alert.alert(
+      '功能準備中', 
+      'Firebase 登入功能即將開放。現時為展示模式。',
+      [{ text: 'OK' }]
+    );
+    setShowLoginModal(false);
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
@@ -50,8 +77,11 @@ const ProfileScreen: React.FC = () => {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* User Card */}
-        <View style={styles.userCard}>
+        {/* User Card - show login if not authenticated */}
+        <TouchableOpacity 
+          style={styles.userCard}
+          onPress={() => setShowLoginModal(true)}
+        >
           <View style={styles.userMain}>
             <View style={styles.avatar}>
               <Text style={styles.avatarEmoji}>👤</Text>
@@ -60,23 +90,14 @@ const ProfileScreen: React.FC = () => {
               </View>
             </View>
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>香港市民</Text>
-              <Text style={styles.userEmail}>Adrian.chan213@gmail.com</Text>
-              <View style={styles.userMeta}>
-                <View style={styles.userDistrict}>
-                  <Text style={styles.userDistrictIcon}>📍</Text>
-                  <Text style={styles.userDistrictText}>油尖旺區</Text>
-                </View>
-                <View style={styles.userMember}>
-                  <Text style={styles.userMemberText}>👑 活躍會員</Text>
-                </View>
-              </View>
+              <Text style={styles.userName}>點擊登入 / 註冊</Text>
+              <Text style={styles.userEmail}>登入以使用個人化功能</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.editButton}>
-            <Text style={styles.editButtonText}>編輯</Text>
-          </TouchableOpacity>
-        </View>
+          <View style={styles.loginArrow}>
+            <Text style={styles.loginArrowText}>›</Text>
+          </View>
+        </TouchableOpacity>
 
         {/* Stats */}
         <View style={styles.statsContainer}>
@@ -221,6 +242,78 @@ const ProfileScreen: React.FC = () => {
 
         <View style={{ height: 120 }} />
       </ScrollView>
+
+      {/* Login Modal */}
+      <Modal visible={showLoginModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {isLogin ? '🔑 登入' : '📝 註冊'}
+              </Text>
+              <TouchableOpacity onPress={() => setShowLoginModal(false)}>
+                <Text style={styles.modalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {!isLogin && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>名稱</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="你叫咩名？"
+                  placeholderTextColor="#999"
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                />
+              </View>
+            )}
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>電郵</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="your@email.com"
+                placeholderTextColor="#999"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>密碼</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="••••••••"
+                placeholderTextColor="#999"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+            </View>
+
+            <TouchableOpacity style={styles.authButton} onPress={handleAuth}>
+              <Text style={styles.authButtonText}>
+                {isLogin ? '登入' : '建立帳戶'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.switchAuth}
+              onPress={() => setIsLogin(!isLogin)}
+            >
+              <Text style={styles.switchAuthText}>
+                {isLogin 
+                  ? '未有帳戶？立即註冊' 
+                  : '已有帳戶？登入'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -230,23 +323,17 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
   headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#FF6B35' },
   content: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
-  userCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  userMain: { flexDirection: 'row', marginBottom: 14 },
+  userCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, flexDirection: 'row', alignItems: 'center' },
+  userMain: { flexDirection: 'row', flex: 1 },
   avatar: { width: 68, height: 68, borderRadius: 34, backgroundColor: '#FFE5DC', justifyContent: 'center', alignItems: 'center', marginRight: 14, position: 'relative' },
   avatarEmoji: { fontSize: 32 },
   avatarBadge: { position: 'absolute', bottom: 0, right: 0, width: 24, height: 24, borderRadius: 12, backgroundColor: '#FFD700', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFF' },
   avatarBadgeText: { fontSize: 12 },
   userInfo: { flex: 1, justifyContent: 'center' },
-  userName: { fontSize: 20, fontWeight: 'bold', color: '#333', marginBottom: 4 },
-  userEmail: { fontSize: 13, color: '#666', marginBottom: 8 },
-  userMeta: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  userDistrict: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E3F2FD', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
-  userDistrictIcon: { fontSize: 10, marginRight: 4 },
-  userDistrictText: { fontSize: 11, color: '#1976D2' },
-  userMember: { backgroundColor: '#FFF8E1', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
-  userMemberText: { fontSize: 11, color: '#FF9800' },
-  editButton: { alignSelf: 'flex-start', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 16, backgroundColor: '#F5F5F5' },
-  editButtonText: { fontSize: 13, color: '#666' },
+  userName: { fontSize: 18, fontWeight: '600', color: '#333', marginBottom: 4 },
+  userEmail: { fontSize: 13, color: '#666' },
+  loginArrow: { marginLeft: 10 },
+  loginArrowText: { fontSize: 24, color: '#CCC' },
   statsContainer: { flexDirection: 'row', backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 24 },
   statItem: { flex: 1, alignItems: 'center' },
   statIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
@@ -289,6 +376,20 @@ const styles = StyleSheet.create({
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF', borderRadius: 12, padding: 16, marginTop: 8 },
   logoutIcon: { fontSize: 18, marginRight: 8 },
   logoutText: { fontSize: 15, color: '#F44336' },
+
+  // Modal styles
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#333' },
+  modalClose: { fontSize: 22, color: '#999' },
+  inputGroup: { marginBottom: 16 },
+  inputLabel: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 8 },
+  input: { backgroundColor: '#F5F5F5', borderRadius: 12, padding: 14, fontSize: 15, color: '#333' },
+  authButton: { backgroundColor: '#FF6B35', borderRadius: 24, padding: 16, alignItems: 'center', marginTop: 8 },
+  authButtonText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  switchAuth: { marginTop: 16, alignItems: 'center' },
+  switchAuthText: { fontSize: 14, color: '#1976D2' },
 });
 
 export default ProfileScreen;
