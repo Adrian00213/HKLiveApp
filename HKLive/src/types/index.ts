@@ -1,4 +1,4 @@
-import { Incident, Deal, Discussion, Weather, AQHI, MTRStatus, BusArrival } from '../types';
+// Types for HKLive App
 
 export interface GeoLocated {
   lat: number;
@@ -13,10 +13,12 @@ export interface Incident extends GeoLocated {
   type: IncidentType;
   title: string;
   description: string;
-  image?: string;
-  createdAt: Date;
-  userId: string;
+  imageUrl?: string;
+  audioUrl?: string;
   upvotes: number;
+  userId: string;
+  createdAt: Date;
+  expiresAt?: Date;
 }
 
 export type DealCategory = 'food' | 'shopping' | 'entertainment';
@@ -37,12 +39,13 @@ export interface Discussion extends GeoLocated {
   district: string;
   title: string;
   content: string;
-  image?: string;
+  imageUrl?: string;
   authorId: string;
   authorName: string;
   isAnonymous: boolean;
-  createdAt: Date;
+  upvotes: number;
   commentCount: number;
+  createdAt: Date;
 }
 
 export interface Comment {
@@ -86,7 +89,7 @@ export interface BusArrival extends GeoLocated {
 
 export type EventType = 'concert' | 'exhibition' | 'festival' | 'sports';
 
-export interface Event extends GeoLocated {
+export interface HKEvent extends GeoLocated {
   id: string;
   type: EventType;
   title: string;
@@ -94,17 +97,24 @@ export interface Event extends GeoLocated {
   date: string;
   time: string;
   price: string;
-  image?: string;
+  imageUrl?: string;
   attendees: number;
+  interested?: string[];
 }
 
 export interface User {
   id: string;
-  name: string;
   email: string;
+  name: string;
+  avatar?: string;
   language: 'zh-TW' | 'zh-CN' | 'en';
   district: string;
   favorites: string[];
+}
+
+export interface UserSettings {
+  notifications: boolean;
+  locationSharing: boolean;
 }
 
 export type RootTabParamList = {

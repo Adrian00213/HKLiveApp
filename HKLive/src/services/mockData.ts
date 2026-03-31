@@ -1,12 +1,9 @@
-import { Incident, Deal, Discussion, Weather, AQHI, MTRStatus, BusArrival } from '../types';
-
-// Distance-sorted mock data (distance in km from user's location)
-// User location: 22.3193, 114.1694 (Hong Kong)
+import { Incident, Deal, Discussion, Weather, AQHI, MTRStatus, BusArrival, HKEvent } from '../types';
 
 export interface GeoLocated {
   lat: number;
   lng: number;
-  distance?: number; // km
+  distance?: number;
 }
 
 // Mock Incidents - sorted by distance (nearest first)
@@ -167,90 +164,94 @@ export const mockDeals: Deal[] = [
   },
 ];
 
-// Mock Discussions - sorted by recency but show distance
+// Mock Discussions
 export const mockDiscussions: Discussion[] = [
   {
     id: '1',
+    lat: 22.3190,
+    lng: 114.1720,
     district: '油尖旺',
     title: '廟街夜市終於搞啦！',
     content: '終於等到，你哋去咗未？今晚有嘢食又有表演睇',
     authorId: 'u1',
     authorName: '街坊小強',
     isAnonymous: false,
-    createdAt: new Date(Date.now() - 600000), // 10 mins ago
+    createdAt: new Date(Date.now() - 600000),
+    upvotes: 42,
     commentCount: 45,
     distance: 0.8,
   },
   {
     id: '2',
+    lat: 22.3180,
+    lng: 114.1710,
     district: '油尖旺',
     title: '邊度有好吃嘅車仔麵？',
     content: '搬呢頭兩個月，想搵好味嘅車仔麵，各位巴打有冇好介紹？',
     authorId: 'u2',
     authorName: '匿名',
     isAnonymous: true,
-    createdAt: new Date(Date.now() - 1800000), // 30 mins ago
+    createdAt: new Date(Date.now() - 1800000),
+    upvotes: 23,
     commentCount: 23,
     distance: 0.5,
   },
   {
     id: '3',
+    lat: 22.3280,
+    lng: 114.1800,
     district: '深水埗',
     title: '黃金電腦有新優惠',
     content: '見到有間話砌機送風扇，有冇巴打知係真定假？驚中伏',
     authorId: 'u3',
     authorName: '電腦發燒友',
     isAnonymous: false,
-    createdAt: new Date(Date.now() - 3600000), // 1 hour ago
+    createdAt: new Date(Date.now() - 3600000),
+    upvotes: 31,
     commentCount: 31,
     distance: 1.5,
   },
   {
     id: '4',
+    lat: 22.3160,
+    lng: 114.1750,
     district: '旺角',
     title: 'MIRROR演唱會飛被炒貴晒',
     content: '依家啲飛貴到離譜，原價$680炒到$3000，真係去唔起',
     authorId: 'u4',
     authorName: '追星粉絲',
     isAnonymous: false,
-    createdAt: new Date(Date.now() - 7200000), // 2 hours ago
+    createdAt: new Date(Date.now() - 7200000),
+    upvotes: 89,
     commentCount: 89,
     distance: 0.3,
   },
   {
     id: '5',
+    lat: 22.3195,
+    lng: 114.1700,
     district: '油尖旺',
     title: '最近邊間茶餐廳正啲？',
     content: '金鳳樓得唔得？還是蘭芳園正一點？',
     authorId: 'u5',
     authorName: 'foodie_hk',
     isAnonymous: false,
-    createdAt: new Date(Date.now() - 10800000), // 3 hours ago
+    createdAt: new Date(Date.now() - 10800000),
+    upvotes: 17,
     commentCount: 17,
     distance: 0.2,
   },
 ];
 
-// Mock Events - sorted by date/distance
-export interface Event {
-  id: string;
-  type: 'concert' | 'exhibition' | 'festival' | 'sports';
-  title: string;
-  venue: string;
-  date: string;
-  time: string;
-  price: string;
-  image?: string;
-  attendees: number;
-  distance: number; // km
-}
-
-export const mockEvents: Event[] = [
+// Mock Events
+export const mockEvents: HKEvent[] = [
   {
     id: '1',
     type: 'concert',
     title: 'MIRROR 演唱會 2026',
     venue: '亞洲國際博覽館',
+    lat: 22.3250,
+    lng: 113.9750,
     date: '2026-04-15',
     time: '20:00',
     price: '$680-$1280',
@@ -262,6 +263,8 @@ export const mockEvents: Event[] = [
     type: 'festival',
     title: '香港美酒佳餚節',
     venue: '中環海濱',
+    lat: 22.2800,
+    lng: 114.1600,
     date: '2026-04-20',
     time: '12:00-22:00',
     price: '免費入場',
@@ -273,6 +276,8 @@ export const mockEvents: Event[] = [
     type: 'exhibition',
     title: '香港藝術節',
     venue: '香港文化中心',
+    lat: 22.2950,
+    lng: 114.1720,
     date: '2026-04-01',
     time: '10:00-21:00',
     price: '$100-$380',
@@ -284,6 +289,8 @@ export const mockEvents: Event[] = [
     type: 'sports',
     title: '香港馬拉松 2026',
     venue: '尖沙咀',
+    lat: 22.2950,
+    lng: 114.1750,
     date: '2026-04-10',
     time: '06:00',
     price: '$450',
@@ -295,6 +302,8 @@ export const mockEvents: Event[] = [
     type: 'festival',
     title: '廟街夜市',
     venue: '廟街',
+    lat: 22.3100,
+    lng: 114.1650,
     date: '每日',
     time: '18:00-23:00',
     price: '免費',
@@ -306,6 +315,8 @@ export const mockEvents: Event[] = [
     type: 'concert',
     title: '姜濤見面會',
     venue: '九龍灣展覽中心',
+    lat: 22.3250,
+    lng: 114.2050,
     date: '2026-04-05',
     time: '15:00',
     price: '$380-$880',
@@ -317,6 +328,8 @@ export const mockEvents: Event[] = [
     type: 'exhibition',
     title: 'NFT 數碼藝術展',
     venue: '西九文化區',
+    lat: 22.2850,
+    lng: 114.1650,
     date: '2026-04-01',
     time: '10:00-20:00',
     price: '$150',
@@ -357,7 +370,7 @@ export const mockAqhi: AQHI[] = [
   { district: '西貢', value: 3, level: 'low' },
 ];
 
-// Mock MTR Status - sorted by line importance
+// Mock MTR Status
 export const mockMtrStatus: MTRStatus[] = [
   { line: '觀塘線', status: 'normal' },
   { line: '荃灣線', status: 'normal' },
@@ -369,12 +382,12 @@ export const mockMtrStatus: MTRStatus[] = [
   { line: '機場快線', status: 'normal' },
 ];
 
-// Mock Bus Arrivals - sorted by ETA (nearest first)
+// Mock Bus Arrivals
 export const mockBusArrivals: BusArrival[] = [
-  { stopId: '1', route: '1', destination: '堅尼地城', eta: 2, capacity: 'medium', distance: 0.1 },
-  { stopId: '1', route: '5', destination: '北角', eta: 5, capacity: 'high', distance: 0.1 },
-  { stopId: '1', route: '10', destination: '香港仔', eta: 8, capacity: 'low', distance: 0.1 },
-  { stopId: '2', route: '203', destination: '又一城', eta: 3, capacity: 'medium', distance: 0.3 },
-  { stopId: '2', route: '270A', destination: '上水', eta: 11, capacity: 'high', distance: 0.3 },
-  { stopId: '3', route: 'N21', destination: '機場', eta: 15, capacity: 'low', distance: 0.5 },
+  { stopId: '1', route: '1', destination: '堅尼地城', eta: 2, capacity: 'medium', lat: 22.3190, lng: 114.1700, distance: 0.1 },
+  { stopId: '1', route: '5', destination: '北角', eta: 5, capacity: 'high', lat: 22.3190, lng: 114.1700, distance: 0.1 },
+  { stopId: '1', route: '10', destination: '香港仔', eta: 8, capacity: 'low', lat: 22.3190, lng: 114.1700, distance: 0.1 },
+  { stopId: '2', route: '203', destination: '又一城', eta: 3, capacity: 'medium', lat: 22.3220, lng: 114.1680, distance: 0.3 },
+  { stopId: '2', route: '270A', destination: '上水', eta: 11, capacity: 'high', lat: 22.3220, lng: 114.1680, distance: 0.3 },
+  { stopId: '3', route: 'N21', destination: '機場', eta: 15, capacity: 'low', lat: 22.3100, lng: 114.1750, distance: 0.5 },
 ];

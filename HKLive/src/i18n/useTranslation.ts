@@ -6,8 +6,9 @@ export const useTranslation = () => {
   const { selectedLanguage } = useAppStore();
 
   const t = useCallback(
-    (key: TranslationKey): string => {
-      return translations[selectedLanguage][key] || key;
+    (key: string): string => {
+      const langTranslations = translations[selectedLanguage];
+      return langTranslations[key as keyof typeof langTranslations] || key;
     },
     [selectedLanguage]
   );

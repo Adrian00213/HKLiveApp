@@ -18,12 +18,10 @@ export interface UserProfile {
   createdAt: Date;
 }
 
-// Sign up with email/password
 export const signUp = async (email: string, password: string, name: string): Promise<UserProfile> => {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
   
-  // Create user profile in Firestore
   const profile: UserProfile = {
     id: user.uid,
     email: user.email || email,
@@ -34,23 +32,22 @@ export const signUp = async (email: string, password: string, name: string): Pro
   };
   
   await setDoc(doc(db, 'users', user.uid), profile);
-  
   return profile;
 };
 
-// Sign in with email/password
 export const signIn = async (email: string, password: string): Promise<UserProfile> => {
   const userCredential = await signInWithEmailAndPassword(auth, email, password);
   const profile = await getUserProfile(userCredential.user.uid);
+  if (!profile) {
+    throw new Error('User profile not found');
+  }
   return profile;
 };
 
-// Sign out
 export const signOut = async (): Promise<void> => {
   await firebaseSignOut(auth);
 };
 
-// Get user profile
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
   const docRef = doc(db, 'users', userId);
   const docSnap = await getDoc(docRef);
@@ -61,7 +58,6 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
   return null;
 };
 
-// Auth state observer
 export const onAuthChange = (callback: (user: User | null) => void) => {
   return onAuthStateChanged(auth, callback);
 };

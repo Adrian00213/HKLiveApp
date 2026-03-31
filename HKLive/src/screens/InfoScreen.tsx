@@ -21,14 +21,13 @@ import {
   mockMtrStatus,
   mockBusArrivals,
 } from '../services/mockData';
-import { Deal, Event, Discussion, AQHI, MTRStatus, BusArrival } from '../types';
+import { AQHI, MTRStatus } from '../types';
 
 const InfoScreen: React.FC = () => {
   const { t } = useTranslation();
   const { deals, setDeals, discussions, setDiscussions, mtrStatus, setMtrStatus } = useAppStore();
   const [activeTab, setActiveTab] = useState<'events' | 'deals' | 'transport' | 'weather' | 'discussion'>('events');
   const [isLoading, setIsLoading] = useState(true);
-  const [comment, setComment] = useState('');
   const [selectedEventType, setSelectedEventType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'distance' | 'time'>('distance');
   const [showPostModal, setShowPostModal] = useState(false);
@@ -43,54 +42,46 @@ const InfoScreen: React.FC = () => {
     }, 600);
   }, []);
 
-  // Sort by distance helper
-  const sortByDistance = <T extends { distance?: number }>(items: T[]): T[] => {
+  const sortByDistance = (items: any[]) => {
     return [...items].sort((a, b) => (a.distance || 999) - (b.distance || 999));
   };
 
-  // Get user location (mock)
-  const userLocation = { lat: 22.3193, lng: 114.1694 };
-
-  // Filter and sort events
   const sortedEvents = useMemo(() => {
     const filtered = selectedEventType === 'all'
       ? mockEvents
-      : mockEvents.filter(e => e.type === selectedEventType);
-    return sortBy === 'distance' 
+      : mockEvents.filter((e: any) => e.type === selectedEventType);
+    return sortBy === 'distance'
       ? sortByDistance(filtered)
-      : [...filtered].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      : [...filtered].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [selectedEventType, sortBy]);
 
-  // Sort deals by distance
   const sortedDeals = useMemo(() => sortByDistance(mockDeals), []);
 
-  // Sort bus arrivals by distance and ETA
   const sortedBusArrivals = useMemo(() => {
-    return [...mockBusArrivals].sort((a, b) => {
-      if (sortBy === 'distance') {
-        return (a.distance || 999) - (b.distance || 999);
-      }
-      return a.eta - b.eta;
+    return [...mockBusArrivals].sort((a: any, b: any) => {
+      return sortBy === 'distance'
+        ? (a.distance || 999) - (b.distance || 999)
+        : a.eta - b.eta;
     });
   }, [sortBy]);
 
   const getAqhiColor = (level: AQHI['level']) => {
-    const colors = { low: '#4CAF50', medium: '#FFC107', high: '#FF9800', 'very-high': '#F44336' };
+    const colors: Record<string, string> = { low: '#4CAF50', medium: '#FFC107', high: '#FF9800', 'very-high': '#F44336' };
     return colors[level];
   };
 
   const getAqhiText = (level: AQHI['level']) => {
-    const texts = { low: t('low'), medium: t('medium'), high: t('high'), 'very-high': t('veryHigh') };
+    const texts: Record<string, string> = { low: t('low'), medium: t('medium'), high: t('high'), 'very-high': t('veryHigh') };
     return texts[level];
   };
 
   const getMtrStatusColor = (status: MTRStatus['status']) => {
-    const colors = { normal: '#4CAF50', delayed: '#FF9800', partial: '#F44336' };
+    const colors: Record<string, string> = { normal: '#4CAF50', delayed: '#FF9800', partial: '#F44336' };
     return colors[status];
   };
 
   const getMtrStatusText = (status: MTRStatus['status']) => {
-    const texts = { normal: t('normal'), delayed: t('delayed'), partial: t('partial') };
+    const texts: Record<string, string> = { normal: t('normal'), delayed: t('delayed'), partial: t('partial') };
     return texts[status];
   };
 
@@ -119,9 +110,9 @@ const InfoScreen: React.FC = () => {
     return `${km.toFixed(1)}km`;
   };
 
-  const getEventIcon = (type: Event['type']) => {
-    const icons = { concert: '🎤', exhibition: '🎭', festival: '🎪', sports: '🏃' };
-    return icons[type];
+  const getEventIcon = (type: string) => {
+    const icons: Record<string, string> = { concert: '🎤', exhibition: '🎭', festival: '🎪', sports: '🏃' };
+    return icons[type] || '📍';
   };
 
   const eventTypes = [
@@ -133,12 +124,12 @@ const InfoScreen: React.FC = () => {
   ];
 
   const tabs = [
-    { key: 'events', label: '活動', icon: '🎭' },
-    { key: 'deals', label: '即減', icon: '🎫' },
-    { key: 'transport', label: '交通', icon: '🚌' },
-    { key: 'weather', label: '天氣', icon: '🌤️' },
-    { key: 'discussion', label: '吹水', icon: '💬' },
-  ] as const;
+    { key: 'events' as const, label: '活動', icon: '🎭' },
+    { key: 'deals' as const, label: '即減', icon: '🎫' },
+    { key: 'transport' as const, label: '交通', icon: '🚌' },
+    { key: 'weather' as const, label: '天氣', icon: '🌤️' },
+    { key: 'discussion' as const, label: '吹水', icon: '💬' },
+  ];
 
   if (isLoading) {
     return (
@@ -153,7 +144,6 @@ const InfoScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>{t('info')}</Text>
@@ -164,7 +154,6 @@ const InfoScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Tabs */}
       <View style={styles.tabsContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
           {tabs.map((tab) => (
@@ -182,7 +171,6 @@ const InfoScreen: React.FC = () => {
         </ScrollView>
       </View>
 
-      {/* Sort Toggle */}
       <View style={styles.sortContainer}>
         <Text style={styles.sortLabel}>{t('sortByDistance')}</Text>
         <View style={styles.sortToggle}>
@@ -206,10 +194,8 @@ const InfoScreen: React.FC = () => {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Events Tab */}
         {activeTab === 'events' && (
           <View>
-            {/* Event Type Filter */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.eventFilterScroll}>
               <View style={styles.eventFilter}>
                 {eventTypes.map((type) => (
@@ -227,8 +213,7 @@ const InfoScreen: React.FC = () => {
               </View>
             </ScrollView>
 
-            {/* Featured Event - nearest popular one */}
-            {sortedEvents[0] && (
+            {sortedEvents.length > 0 && (
               <View style={styles.featuredEvent}>
                 <View style={styles.featuredBadge}>
                   <Text style={styles.featuredBadgeIcon}>🔥</Text>
@@ -259,12 +244,11 @@ const InfoScreen: React.FC = () => {
               </View>
             )}
 
-            {/* Nearby Events */}
             <Text style={styles.sectionTitle}>👇 {t('near')} (由近到遠)</Text>
-            {sortedEvents.slice(1).map((event) => (
+            {sortedEvents.slice(1, 6).map((event: any) => (
               <View key={event.id} style={styles.eventCard}>
                 <View style={styles.eventRow}>
-                  <View style={[styles.eventIconBox, { backgroundColor: event.type === 'concert' ? '#FFE5DC' : event.type === 'festival' ? '#E8F5E9' : '#E3F2FD' }]}>
+                  <View style={[styles.eventIconBox, { backgroundColor: event.type === 'concert' ? '#FFE5DC' : '#E3F2FD' }]}>
                     <Text style={styles.eventIcon}>{getEventIcon(event.type)}</Text>
                   </View>
                   <View style={styles.eventInfo}>
@@ -290,7 +274,7 @@ const InfoScreen: React.FC = () => {
                   </View>
                 </View>
               </View>
-            )}
+            ))}
 
             <TouchableOpacity style={styles.mapLink}>
               <Text style={styles.mapLinkIcon}>🗺️</Text>
@@ -299,7 +283,6 @@ const InfoScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Deals Tab - sorted by distance */}
         {activeTab === 'deals' && (
           <View>
             <View style={styles.dealsHeader}>
@@ -314,14 +297,13 @@ const InfoScreen: React.FC = () => {
               </View>
             </View>
 
-            {sortedDeals.map((deal) => (
+            {sortedDeals.map((deal: any) => (
               <View key={deal.id} style={styles.dealCard}>
                 <View style={styles.dealMain}>
                   <View style={styles.dealLeft}>
-                    <View style={[styles.categoryPill, { backgroundColor: deal.category === 'food' ? '#FFE5DC' : deal.category === 'shopping' ? '#E3F2FD' : '#E8F5E9' }]}>
-                      <Text style={[styles.categoryPillText, { color: deal.category === 'food' ? '#FF6B35' : deal.category === 'shopping' ? '#1976D2' : '#4CAF50' }]}>
-                        {deal.category === 'food' ? '🍜' : deal.category === 'shopping' ? '🛒' : '🎭'} 
-                        {deal.category === 'food' ? '食' : deal.category === 'shopping' ? '買' : '玩'}
+                    <View style={[styles.categoryPill, { backgroundColor: deal.category === 'food' ? '#FFE5DC' : '#E3F2FD' }]}>
+                      <Text style={[styles.categoryPillText, { color: deal.category === 'food' ? '#FF6B35' : '#1976D2' }]}>
+                        {deal.category === 'food' ? '🍜' : '🛒'} {deal.category === 'food' ? '食' : '買'}
                       </Text>
                     </View>
                     <Text style={styles.dealMerchant}>{deal.merchantName}</Text>
@@ -356,12 +338,11 @@ const InfoScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Transport Tab - sorted by distance */}
         {activeTab === 'transport' && (
           <View>
             <Text style={styles.sectionTitle}>🚇 {t('mtrStatus')}</Text>
             <View style={styles.mtrContainer}>
-              {mtrStatus.map((line, index) => (
+              {mtrStatus.map((line: any, index: number) => (
                 <View key={index} style={styles.mtrLine}>
                   <View style={[styles.mtrDot, { backgroundColor: getMtrStatusColor(line.status) }]} />
                   <Text style={styles.mtrLineName}>{line.line}</Text>
@@ -376,7 +357,7 @@ const InfoScreen: React.FC = () => {
 
             <Text style={styles.sectionTitle}>🚌 {t('busArrival')} (最近→最遠)</Text>
             <View style={styles.busList}>
-              {sortedBusArrivals.map((bus, index) => (
+              {sortedBusArrivals.map((bus: any, index: number) => (
                 <View key={index} style={styles.busCard}>
                   <View style={styles.busLeft}>
                     <View style={styles.busRouteBox}>
@@ -414,7 +395,6 @@ const InfoScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Weather Tab */}
         {activeTab === 'weather' && (
           <View>
             <View style={styles.weatherCard}>
@@ -446,7 +426,7 @@ const InfoScreen: React.FC = () => {
 
             <Text style={styles.sectionTitle}>💨 {t('aqhiTitle')} · 18區</Text>
             <View style={styles.aqhiGrid}>
-              {mockAqhi.sort((a, b) => a.value - b.value).map((item, index) => (
+              {mockAqhi.sort((a, b) => a.value - b.value).map((item: any, index: number) => (
                 <View key={index} style={styles.aqhiItem}>
                   <View style={[styles.aqhiBadge, { backgroundColor: getAqhiColor(item.level) }]}>
                     <Text style={styles.aqhiValue}>{item.value}</Text>
@@ -465,7 +445,6 @@ const InfoScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Discussion Tab */}
         {activeTab === 'discussion' && (
           <View>
             <View style={styles.discussionHeader}>
@@ -482,53 +461,11 @@ const InfoScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
 
-            {/* Sort info */}
             <View style={styles.discSortInfo}>
-              <Text style={styles.discSortText}>💬 吹水區 · 最近的士話題</Text>
+              <Text style={styles.discSortText}>💬 吹水區 · 最近的話題</Text>
             </View>
 
-            {sortBy === 'distance' 
-              ? [...mockDiscussions].sort((a, b) => (a.distance || 999) - (b.distance || 999)).map((discussion) => (
-              <View key={discussion.id} style={styles.discCard}>
-                <View style={styles.discMeta}>
-                  <View style={styles.discLeft}>
-                    <View style={styles.districtTag}>
-                      <Text style={styles.districtTagText}>📍 {discussion.district}</Text>
-                    </View>
-                    <View style={styles.authorRow}>
-                      <View style={styles.authorAvatar}>
-                        <Text style={styles.authorAvatarText}>
-                          {discussion.isAnonymous ? '👤' : discussion.authorName.charAt(0)}
-                        </Text>
-                      </View>
-                      <Text style={styles.authorName}>
-                        {discussion.isAnonymous ? t('anonymous') : discussion.authorName}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.discRight}>
-                    <Text style={styles.discTime}>{formatTimeAgo(discussion.createdAt)}</Text>
-                    <Text style={styles.discDist}>📍{formatDistance(discussion.distance)}</Text>
-                  </View>
-                </View>
-                <Text style={styles.discTitle}>{discussion.title}</Text>
-                <Text style={styles.discContent} numberOfLines={2}>{discussion.content}</Text>
-                <View style={styles.discStats}>
-                  <TouchableOpacity style={styles.discStat}>
-                    <Text style={styles.discStatIcon}>👍</Text>
-                    <Text style={styles.discStatText}>42</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.discStat}>
-                    <Text style={styles.discStatIcon}>💬</Text>
-                    <Text style={styles.discStatText}>{discussion.commentCount}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.discStat}>
-                    <Text style={styles.discStatIcon}>📤</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
-              : [...mockDiscussions].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((discussion) => (
+            {sortBy === 'distance' && [...mockDiscussions].sort((a: any, b: any) => (a.distance || 999) - (b.distance || 999)).map((discussion: any) => (
               <View key={discussion.id} style={styles.discCard}>
                 <View style={styles.discMeta}>
                   <View style={styles.discLeft}>
@@ -574,7 +511,6 @@ const InfoScreen: React.FC = () => {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Create Post Modal */}
       <Modal visible={showPostModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -655,7 +591,6 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: 16, paddingTop: 14 },
   sectionTitle: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 12, marginTop: 4 },
 
-  // Events styles
   eventFilterScroll: { marginBottom: 14 },
   eventFilter: { flexDirection: 'row', gap: 6 },
   eventFilterTab: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 14, backgroundColor: '#FFF', marginRight: 6 },
@@ -704,7 +639,6 @@ const styles = StyleSheet.create({
   mapLinkIcon: { fontSize: 18, marginRight: 8 },
   mapLinkText: { fontSize: 14, color: '#1976D2', fontWeight: '600' },
 
-  // Deals styles
   dealsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   dealsTitle: { fontSize: 18, fontWeight: '600', color: '#333' },
   dealsSubtitle: { fontSize: 12, color: '#666', marginTop: 2 },
@@ -734,7 +668,6 @@ const styles = StyleSheet.create({
   shareBtn: { padding: 6 },
   shareBtnText: { fontSize: 16 },
 
-  // Transport styles
   mtrContainer: { backgroundColor: '#FFF', borderRadius: 12, padding: 8, marginBottom: 16 },
   mtrLine: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 6 },
   mtrDot: { width: 10, height: 10, borderRadius: 5, marginRight: 10 },
@@ -762,7 +695,6 @@ const styles = StyleSheet.create({
   nearbyStopsIcon: { fontSize: 16, marginRight: 8 },
   nearbyStopsText: { fontSize: 13, color: '#1976D2', fontWeight: '600' },
 
-  // Weather styles
   weatherCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 18, marginBottom: 16 },
   weatherTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
   weatherIcon: { fontSize: 52, marginRight: 14 },
@@ -783,7 +715,6 @@ const styles = StyleSheet.create({
   forecastBtn: { backgroundColor: '#E3F2FD', borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 10 },
   forecastBtnText: { fontSize: 14, color: '#1976D2', fontWeight: '600' },
 
-  // Discussion styles
   discussionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   discussionTabs: { flexDirection: 'row', gap: 6 },
   discTabActive: { backgroundColor: '#FF6B35', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16 },
@@ -813,7 +744,6 @@ const styles = StyleSheet.create({
   discStatIcon: { fontSize: 14 },
   discStatText: { fontSize: 12, color: '#666' },
 
-  // Modal styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
